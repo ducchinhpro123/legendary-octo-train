@@ -6,13 +6,17 @@ import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 // import org.springframework.security.core.userdetails.UserDetailsService;
@@ -37,7 +41,11 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.nimbusds.jose.jwk.JWKSet;
@@ -48,28 +56,41 @@ import com.nimbusds.jose.proc.SecurityContext;
 
 @Configuration
 public class ProjectConfig {
+
+    @Value("${react.redirect.uri}")
+    private String redirectUri;
+
+    @Value("${react.post.logout.uri}")
+    private String postLogoutUri;
+
     @Bean
     @Order(1)
-    public SecurityFilterChain asFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain asFilterChain(HttpSecurity http)
+            throws Exception {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
-        // Enabling the OpenID Connect protocol
-        // http.getConfigurer(OAuth2AuthorizationServerConfigurer.class).oidc(Customizer.withDefaults());
-        // Specifying the authentication page for users
-        http.exceptionHandling((e) -> e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login")));
-        http.cors(Customizer.withDefaults());
+
+        // Enable this one so the client can access
+        // http://localhost:8080/.well-known/openid-configuration
+        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+                .oidc(Customizer.withDefaults());
+
+        http.exceptionHandling((e) -> e.authenticationEntryPoint(
+                new LoginUrlAuthenticationEntryPoint("/login")));
+
         return http.build();
     }
 
     @Bean
     @Order(2)
-    public SecurityFilterChain defaultFilterChain(HttpSecurity http) throws Exception {
-        http.formLogin(Customizer.withDefaults())
-                .cors(Customizer.withDefaults())
-                .authorizeHttpRequests(
-                        c -> c.requestMatchers("/h2-console/**").permitAll()
-                                .anyRequest().authenticated())
-                .headers(headers -> headers.frameOptions().sameOrigin());
-        ;
+    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
+            throws Exception {
+        http.formLogin(Customizer.withDefaults());
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers("/.well-known/**").permitAll());
+
+        http.authorizeHttpRequests(
+                c -> c.requestMatchers("/api/auth/**").permitAll()
+                        .anyRequest().authenticated());
 
         return http.build();
     }
@@ -78,12 +99,6 @@ public class ProjectConfig {
     public PasswordEncoder pasEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-    @Value("${react.redirect.uri}")
-    private String redirectUri;
-
-    @Value("${react.post.logout.uri}")
-    private String postLogoutUri;
 
     @Bean
     public RegisteredClientRepository registeredClientRepository() {
@@ -107,6 +122,10 @@ public class ProjectConfig {
                 .scope(OidcScopes.OPENID)
                 .scope(OidcScopes.PROFILE)
                 .scope("read")
+                .clientSettings(ClientSettings.builder()
+                        .requireAuthorizationConsent(false)
+                        .requireProofKey(true) // Enable PKCE for public client
+                        .build())
                 .tokenSettings(TokenSettings.builder()
                         .accessTokenTimeToLive(Duration.ofMinutes(30))
                         .refreshTokenTimeToLive(Duration.ofHours(8))
@@ -133,6 +152,7 @@ public class ProjectConfig {
         return new ImmutableJWKSet<>(jwkSet);
     }
 
+    // CUSTOM CLAIMS
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
         return ctx -> {
@@ -141,8 +161,15 @@ public class ProjectConfig {
         };
     }
 
+    // @Bean
+    // public AuthorizationServerSettings autServerSettings() {
+    // return AuthorizationServerSettings.builder()
+    // .issuer("http://localhost:8080")
+    // .build();
+    // }
+
     @Bean
-    public AuthorizationServerSettings autServerSettings() {
+    public AuthorizationServerSettings authorizationServerSettings() {
         return AuthorizationServerSettings.builder().build();
     }
 }

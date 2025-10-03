@@ -24,15 +24,15 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         if (userRepository.count() == 0) {
             // Create default users
-            User bill = new User("bill", passwordEncoder.encode("password"), "USER");
-            User admin = new User("admin", passwordEncoder.encode("admin123"), "USER,ADMIN");
+            User bill = new User("bill", "bill@example.com", passwordEncoder.encode("password"), "USER");
+            User admin = new User("admin", "admin@example.com", passwordEncoder.encode("admin123"), "USER,ADMIN");
 
             userRepository.save(bill);
             userRepository.save(admin);
 
             logger.info("Sample users created:");
-            logger.info("Username: bill, Password: password");
-            logger.info("Username: admin, Password: admin123");
+            logger.info("Username: bill, Email: bill@example.com, Password: password");
+            logger.info("Username: admin, Email: admin@example.com, Password: admin123");
         }
     }
 

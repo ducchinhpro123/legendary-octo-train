@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 public class ProjectConfig {
@@ -22,15 +23,20 @@ public class ProjectConfig {
     private String resourceServerClientSecret;
 
     private final JwtAuthenticationConverter converter;
+    private final CorsConfigurationSource corsConfigurationSource;
 
-    public ProjectConfig(JwtAuthenticationConverter converter) {
+    public ProjectConfig(JwtAuthenticationConverter converter, CorsConfigurationSource corsConfigurationSource) {
         this.converter = converter;
+        this.corsConfigurationSource = corsConfigurationSource;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // Configuring the resource server to use JWTs for authentication
         http.oauth2ResourceServer(c -> c.jwt(j -> j.jwkSetUri(keySetUri).jwtAuthenticationConverter(converter)));
+
+        // Enable CORS
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource));
 
         // The OPTIONS method represents a request for information about the communication 
         // options available on the request/response chain identified by the Request-URI. 
