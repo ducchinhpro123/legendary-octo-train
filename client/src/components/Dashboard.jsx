@@ -48,6 +48,7 @@ const Dashboard = () => {
   const handleSyncUser = async () => {
     try {
       const syncedUser = await userAPI.syncCurrentUser(user.access_token);
+      console.log(syncedUser);
       setCurrentUser(syncedUser);
       await fetchDashboardData();
     } catch (err) {

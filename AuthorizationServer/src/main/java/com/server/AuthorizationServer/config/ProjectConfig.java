@@ -161,15 +161,15 @@ public class ProjectConfig {
         };
     }
 
-    // @Bean
-    // public AuthorizationServerSettings autServerSettings() {
-    // return AuthorizationServerSettings.builder()
-    // .issuer("http://localhost:8080")
-    // .build();
-    // }
-
     @Bean
-    public AuthorizationServerSettings authorizationServerSettings() {
-        return AuthorizationServerSettings.builder().build();
+    public AuthorizationServerSettings autServerSettings() {
+        return AuthorizationServerSettings.builder()
+                .issuer("http://localhost:8080")
+                .build();
     }
+
+    // @Bean
+    // public AuthorizationServerSettings authorizationServerSettings() {
+    //     return AuthorizationServerSettings.builder().build();
+    // }
 }

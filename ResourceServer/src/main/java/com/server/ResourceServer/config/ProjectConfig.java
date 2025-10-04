@@ -4,7 +4,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfigurationSource;
 
@@ -36,14 +39,27 @@ public class ProjectConfig {
         http.oauth2ResourceServer(c -> c.jwt(j -> j.jwkSetUri(keySetUri).jwtAuthenticationConverter(converter)));
 
         // Enable CORS
-        http.cors(cors -> cors.configurationSource(corsConfigurationSource));
+        http
+                .cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable());
 
-        // The OPTIONS method represents a request for information about the communication 
-        // options available on the request/response chain identified by the Request-URI. 
-        // This method allows the client to determine the options and/or requirements associated with a resource,
-        // or the capabilities of a server, without implying a resource action or initiating a resource retrieval.
-        http.authorizeHttpRequests(c -> c.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll());
+        // The OPTIONS method represents a request for information about the
+        // communication
+        // options available on the request/response chain identified by the
+        // Request-URI.
+        // This method allows the client to determine the options and/or requirements
+        // associated with a resource,
+        // or the capabilities of a server, without implying a resource action or
+        // initiating a resource retrieval.
+        http.authorizeHttpRequests(c -> c.requestMatchers(HttpMethod.OPTIONS,
+                "/**").permitAll());
         http.authorizeHttpRequests(c -> c.anyRequest().authenticated());
         return http.build();
     }
+
+    // @Bean
+    // public JwtDecoder jwtDecoder() {
+    // return
+    // NimbusJwtDecoder.withJwkSetUri("http://localhost:5173/oauth2/jwks").build();
+    // }
 }

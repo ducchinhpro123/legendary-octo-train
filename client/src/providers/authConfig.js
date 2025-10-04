@@ -1,9 +1,13 @@
 import { UserManager, WebStorageStateStore } from 'oidc-client-ts';
 
+// const redirectUri = process.env.REACT_APP_REDIRECT_URI || "http://localhost:5173/callback";
+const redirectUri = window.location.origin + "/callback";
+const authServerUri = process.env.REACT_APP_AUTH_SERVER_URL || 'http://localhost:8080';
+
 export const authConfig = {
-  authority: 'http://localhost:8080',
+  authority: authServerUri,
   client_id: 'react-client',
-  redirect_uri: 'http://localhost:5173/callback',
+  redirect_uri: redirectUri,
   post_logout_redirect_uri: 'http://localhost:5173',
   response_type: 'code',
   scope: 'openid profile read',

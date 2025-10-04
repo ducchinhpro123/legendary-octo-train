@@ -104,6 +104,7 @@ export const userAPI = {
       method: 'POST',
       headers: getHeaders(token),
     });
+    console.log(response);
     return handleResponse(response);
   },
 
